@@ -1,0 +1,26 @@
+
+# Ambiente virtual
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Segredos e configurações locais
+.env
+.env.*
+!.env.example
+
+# Certificados e chaves privadas
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Editor
+.vscode/
