@@ -30,6 +30,7 @@ target_metadata = Base.metadata
 
 from clinicaflow.customers import models as customer_models
 from clinicaflow.services import models as service_models
+from clinicaflow.sales import models as sales_models
 from clinicaflow.finance import models as finance_models
 
 # other values from the config, defined by the needs of env.py,

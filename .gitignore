@@ -24,3 +24,6 @@ build/
 
 # Editor
 .vscode/
+
+# XMLs fiscais emitidos podem conter dados pessoais
+var/nfse/

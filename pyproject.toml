@@ -16,14 +16,20 @@ dependencies = [
     "psycopg[binary]",
     "pydantic-settings",
     "lxml",
+    "httpx",
+    "python-dotenv",
+    "signxml",
+    "cryptography",
     "email-validator",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "httpx",
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+clinicaflow = ["web/*.html"]
