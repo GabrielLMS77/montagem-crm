@@ -27,3 +27,5 @@ build/
 
 # XMLs fiscais emitidos podem conter dados pessoais
 var/nfse/
+# Playwright CLI output (may contain credentials)
+.playwright-cli/

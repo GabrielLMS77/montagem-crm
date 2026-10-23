@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
 from clinicaflow.customers.router import router as customers_router
+from clinicaflow.fiscal.nfse.router import router as nfse_router
 from clinicaflow.sales.router import router as sales_router
 
 app = FastAPI(
@@ -25,3 +26,4 @@ def crm_home():
 
 app.include_router(customers_router)
 app.include_router(sales_router)
+app.include_router(nfse_router)

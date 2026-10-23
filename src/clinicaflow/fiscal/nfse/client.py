@@ -8,6 +8,8 @@ from pathlib import Path
 import re
 import ssl
 import tempfile
+import uuid
+import zlib
 
 import httpx
 from lxml import etree
@@ -87,7 +89,7 @@ def _decode_xml_response(response: httpx.Response) -> bytes:
     try:
         compressed = base64.b64decode(encoded_xml, validate=True)
         return gzip.decompress(compressed)
-    except (ValueError, OSError, gzip.BadGzipFile) as exc:
+    except (ValueError, OSError, EOFError, gzip.BadGzipFile, zlib.error) as exc:
         raise NfseApiError(
             "Falha ao decodificar a NFS-e gzip/base64 da SEFIN."
         ) from exc
@@ -134,7 +136,7 @@ class NfseClient:
             logger.error("DPS rejeitada pelo XSD nacional: %s", exc)
             raise
 
-        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         try:
             with materialize_pfx(
                 self.settings.certificate_path, self.settings.certificate_password
@@ -161,14 +163,16 @@ class NfseClient:
             logger.error("Falha ao carregar certificado PKCS#12: %s", exc)
             raise
 
-        authorized_path = _write_private_artifact(
-            self.settings.output_directory, f"NFSe_{stamp}_retorno.xml", response_xml
-        )
         access_key = _extract_access_key(response_xml)
         safe_key = re.sub(r"[^0-9A-Za-z_-]", "_", access_key)
+        if not safe_key:
+            raise NfseApiError("A SEFIN retornou uma chave de acesso inválida.")
         keyed_path = self.settings.output_directory / f"NFSe_{safe_key}.xml"
-        authorized_path.replace(keyed_path)
-        authorized_path = keyed_path
+        if keyed_path.exists():
+            keyed_path = self.settings.output_directory / f"NFSe_{safe_key}_{uuid.uuid4().hex}.xml"
+        authorized_path = _write_private_artifact(
+            self.settings.output_directory, keyed_path.name, response_xml
+        )
         logger.info("NFS-e autorizada. Chave de acesso: %s", access_key)
         return NfseIssueResult(access_key, signed_path, authorized_path, response_xml)
 
