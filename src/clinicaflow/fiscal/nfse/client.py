@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import ssl
 import tempfile
+from typing import Any
 import uuid
 import zlib
 
@@ -79,9 +80,7 @@ def _decode_xml_response(response: httpx.Response) -> bytes:
     encoded_xml = payload.get("nfseXmlGZipB64")
     if not isinstance(encoded_xml, str) or not encoded_xml:
         detail = (
-            payload.get("mensagem")
-            or payload.get("message")
-            or payload.get("erros")
+            ""
         )
         raise NfseApiError(
             f"A resposta de sucesso não contém nfseXmlGZipB64: {detail!s}"
@@ -133,7 +132,7 @@ class NfseClient:
             schema = load_dps_schema(self.settings.dps_schema_path)
             document = build_dps_document(inf_dps, schema)
         except DpsValidationError as exc:
-            logger.error("DPS rejeitada pelo XSD nacional: %s", exc)
+            logger.error("DPS rejeitada pelo XSD nacional.")
             raise
 
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
@@ -149,9 +148,7 @@ class NfseClient:
                         schema,
                     )
                 except DpsValidationError as exc:
-                    logger.error(
-                        "Falha na assinatura ou validação XMLDSIG da DPS: %s", exc
-                    )
+                    logger.error("Falha na assinatura XMLDSIG da DPS.")
                     raise
                 signed_path = _write_private_artifact(
                     self.settings.output_directory,
@@ -160,7 +157,7 @@ class NfseClient:
                 )
                 response_xml = self._post_dps(signed_xml, certificate)
         except NfseCertificateError as exc:
-            logger.error("Falha ao carregar certificado PKCS#12: %s", exc)
+            logger.error("Falha ao carregar certificado PKCS#12.")
             raise
 
         access_key = _extract_access_key(response_xml)
@@ -173,7 +170,7 @@ class NfseClient:
         authorized_path = _write_private_artifact(
             self.settings.output_directory, keyed_path.name, response_xml
         )
-        logger.info("NFS-e autorizada. Chave de acesso: %s", access_key)
+        logger.info("NFS-e autorizada.")
         return NfseIssueResult(access_key, signed_path, authorized_path, response_xml)
 
     def _post_dps(self, signed_xml: bytes, certificate: CertificateFiles) -> bytes:
@@ -215,7 +212,7 @@ class NfseClient:
             ) from exc
 
         if response.status_code not in (200, 201):
-            detail = response.text[:2000]
+            detail = "[detalhe omitido por privacidade]"
             logger.error(
                 "Rejeição da SEFIN (HTTP %s): %s", response.status_code, detail
             )

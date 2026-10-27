@@ -117,7 +117,9 @@ def sign_dps(
             digest_algorithm="sha256",
             c14n_algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
         )
-        signer.namespaces = {None: DSIG_NAMESPACE}
+        # The default namespace on DPS is the NFSe schema; XMLDSIG must keep
+        # its own explicit namespace or the generated Signature becomes unqualified.
+        signer.namespaces = {"ds": DSIG_NAMESPACE}
         signed_root = signer.sign(
             root,
             key=private_key_pem,

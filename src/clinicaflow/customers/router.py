@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from clinicaflow.core.database import get_db
+from clinicaflow.core.security import require_admin
 from clinicaflow.customers.models import Customer
 from clinicaflow.customers.schemas import (
     CustomerCreate,
@@ -14,7 +15,7 @@ from clinicaflow.customers.schemas import (
     CustomerUpdate,
 )
 
-router = APIRouter(prefix="/customers", tags=["Clientes"])
+router = APIRouter(prefix="/customers", tags=["Clientes"], dependencies=[Depends(require_admin)])
 
 DbSession = Annotated[Session, Depends(get_db)]
 
@@ -111,3 +112,19 @@ def update_customer(
         ) from exc
 
     return customer
+
+
+@router.delete("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_customer(customer_id: int, db: DbSession):
+    customer = db.get(Customer, customer_id)
+    if customer is None:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado.")
+    try:
+        db.delete(customer)
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Este cliente possui vendas registradas. Exclua ou reassocie as vendas antes de remover o cliente.",
+        ) from exc

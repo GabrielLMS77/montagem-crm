@@ -14,6 +14,15 @@ class SaleCreate(BaseModel):
     notes: str | None = None
 
 
+class SaleUpdate(BaseModel):
+    customer_id: int | None = Field(default=None, gt=0)
+    description: str | None = Field(default=None, min_length=2, max_length=200)
+    amount: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
+    sale_date: date | None = None
+    status: Literal["pending", "paid", "cancelled"] | None = None
+    notes: str | None = None
+
+
 class SaleResponse(BaseModel):
     id: int
     customer_id: int
