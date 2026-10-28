@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: clinicaflow
+      POSTGRES_USER: clinicaflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-clinicaflow}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinicaflow -d clinicaflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://clinicaflow:${POSTGRES_PASSWORD:-clinicaflow}@db:5432/clinicaflow
+    ports:
+      - "8000:8000"
+    volumes:
+      - nfse_output:/app/var/nfse
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head && exec uvicorn clinicaflow.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  postgres_data:
+  nfse_output:
